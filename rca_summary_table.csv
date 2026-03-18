@@ -1,0 +1,7 @@
+Hypothesis ID,Hypothesis,Status,Factor ID,Factor,Evidence ID,Evidence,Notes Count
+H1,Sampling procedure was not followed correctly,active,F1,Analyst may have misunderstood the sequence of sampling steps,E1,Step order confusion was mentioned during retrospective questioning,1
+H1,Sampling procedure was not followed correctly,active,F2,Procedure required repeated cross-checking across sections,,,1
+H2,Environmental fluctuation affected the result,narrowed,F1,Temporary room condition shift may have influenced results,E1,Environmental log showed minor fluctuation near deviation time,1
+H2,Environmental fluctuation affected the result,narrowed,F2,Monitoring context was not stable across the whole observation period,,,1
+H3,Documentation entry compressed multiple contributing factors,active,F1,Final RCA format pushed reasoning toward a single neat explanation,E1,Draft notes contained broader possibilities than final narrative,1
+H3,Documentation entry compressed multiple contributing factors,active,F2,Alternative causal paths became less visible during write-up,,,1
