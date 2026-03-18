@@ -1,6 +1,6 @@
 """
 RCA Reasoning Scaffolder
-Cards = single complete st.markdown calls. No empty boxes. Buttons colored by state.
+GMP worker-friendly. Clear button labels. No empty boxes. Toast feedback.
 Run: streamlit run rca_app.py
 Requires: rca_reasoning_core.py in same directory
 """
@@ -38,8 +38,8 @@ rca = st.session_state.rca
 STEPS = {
     1: ("Intake",           "Read the deviation and understand what happened before forming any explanation."),
     2: ("Open Hypotheses",  "List all possible explanations. Do not narrow yet — keep everything visible."),
-    3: ("Attach Reasoning", "For the focused hypothesis, add factors, evidence, and your notes."),
-    4: ("Narrowing",        "Decide which paths to keep, narrow, or drop — after inspecting each one."),
+    3: ("Attach Reasoning", "For the selected hypothesis, review factors, evidence, and add your notes."),
+    4: ("Narrowing",        "Decide which paths to keep, narrow, or drop — after reviewing each one."),
     5: ("Pre-Closure",      "Review what remained visible and what was compressed before you close."),
 }
 
@@ -241,7 +241,7 @@ active_c, narrowed_c, dropped_c = counts()
 selected = get_selected()
 
 # =========================================================
-# Header — pure HTML, single render call
+# Header
 # =========================================================
 render(f"""
 <div style="{CARD}margin-bottom:10px;">
@@ -278,12 +278,10 @@ render(f"""
 """)
 
 # =========================================================
-# Step nav — label above, buttons in columns
+# Step nav
 # =========================================================
-render(f"""
-<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
-    color:#9ca3af;margin-bottom:8px;">Investigation Workflow</div>
-""")
+render('<div style="font-size:11px;font-weight:700;text-transform:uppercase;'
+       'letter-spacing:.08em;color:#9ca3af;margin-bottom:8px;">Investigation Workflow</div>')
 
 step_cols = st.columns(5)
 for i, (n, (title, _)) in enumerate(STEPS.items()):
@@ -291,7 +289,7 @@ for i, (n, (title, _)) in enumerate(STEPS.items()):
         if step == n:
             render(f"""
             <div style="background:#eff6ff;border:2px solid #2563eb;border-radius:9px;
-                padding:10px 14px;text-align:center;margin-bottom:2px;">
+                padding:10px 14px;text-align:center;">
               <div style="font-size:12px;font-weight:700;color:#1d4ed8;">Step {n}</div>
               <div style="font-size:14px;font-weight:700;color:#1e40af;">{title}</div>
             </div>""")
@@ -299,6 +297,7 @@ for i, (n, (title, _)) in enumerate(STEPS.items()):
             if st.button(f"Step {n}  {title}", key=f"step_{n}", use_container_width=True):
                 st.session_state.step = n
                 log_event(f"Moved to step {n}: {title}")
+                st.session_state.toast_msg = f"→ Step {n}: {title}"
                 st.rerun()
 
 render(f"""
@@ -316,52 +315,48 @@ left, center, right = st.columns([1.1, 1.75, 1.1], gap="large")
 
 # ─────────────────────────────────────────────────────────
 # LEFT — Hypothesis list
-# Each card = pure HTML. Buttons = separate widget rows below each card.
 # ─────────────────────────────────────────────────────────
 with left:
-    render(f'<div style="font-size:13px;font-weight:700;text-transform:uppercase;'
-           f'letter-spacing:.07em;color:#6b7280;margin-bottom:12px;">Hypotheses</div>')
+    render('<div style="font-size:13px;font-weight:700;text-transform:uppercase;'
+           'letter-spacing:.07em;color:#6b7280;margin-bottom:12px;">Hypotheses</div>')
 
     for h in rca.hypotheses:
         is_sel  = h.id == st.session_state.selected
         card_bg = "#eff6ff" if is_sel else "#ffffff"
         card_bd = "#2563eb" if is_sel else "#e5e7eb"
         card_bw = "2px"     if is_sel else "1px"
+        viewing_tag = '<div style="margin-top:8px;font-size:12px;color:#2563eb;font-weight:600;">▶ Currently viewing</div>' if is_sel else ""
 
-        # 카드 클릭 = Select. 버튼 3개 = 상태 변경
         render(f"""
         <div style="background:{card_bg};border:{card_bw} solid {card_bd};border-radius:12px;
             padding:20px 22px 16px;margin-bottom:4px;box-shadow:0 1px 4px rgba(0,0,0,.05);">
-          <div style="display:flex;align-items:center;justify-content:space-between;
-              margin-bottom:8px;">
-            <span style="font-size:13px;font-weight:700;color:#9ca3af;
-                letter-spacing:.05em;">{h.id}</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:13px;font-weight:700;color:#9ca3af;letter-spacing:.05em;">{h.id}</span>
             {badge(h.status)}
           </div>
-          <div style="font-size:15px;font-weight:600;color:#111827;
-              line-height:1.5;margin-bottom:10px;">{h.description}</div>
-          <div style="font-size:14px;color:#6b7280;padding:8px 12px;
-              background:rgba(0,0,0,.03);border-radius:7px;">
-            Plausibility: <strong style="color:#374151;">
-              {st.session_state.plausibility.get(h.id, "Unclear")}
-            </strong>
+          <div style="font-size:15px;font-weight:600;color:#111827;line-height:1.5;margin-bottom:10px;">
+            {h.description}
           </div>
+          <div style="font-size:14px;color:#6b7280;padding:8px 12px;background:rgba(0,0,0,.03);border-radius:7px;">
+            Plausibility: <strong style="color:#374151;">{st.session_state.plausibility.get(h.id, "Unclear")}</strong>
+          </div>
+          {viewing_tag}
         </div>
         """)
 
-        # 선택 버튼 — primary=파란색, secondary=기본
+        # 선택 버튼
         if st.button(
-            f"{'✓ Viewing ' if is_sel else 'Select '}{h.id}",
+            f"✓ Viewing {h.id}" if is_sel else f"View {h.id}",
             key=f"sel_{h.id}",
             use_container_width=True,
             type="primary" if is_sel else "secondary"
         ):
             st.session_state.selected = h.id
-            log_event(f"Selected {h.id}")
+            log_event(f"Viewing {h.id}")
             st.session_state.toast_msg = f"🔍 Now viewing {h.id}"
             st.rerun()
 
-        # 상태 변경 버튼 3개 — 현재 status인 것만 primary
+        # 상태 변경 버튼 3개
         b1, b2, b3 = st.columns(3)
         with b1:
             if st.button(
@@ -401,7 +396,6 @@ with left:
 
 # ─────────────────────────────────────────────────────────
 # CENTER — Step content
-# Pure HTML for display, widgets after
 # ─────────────────────────────────────────────────────────
 with center:
 
@@ -421,18 +415,18 @@ with center:
 
         steps_rows = ""
         for n, (title, desc) in STEPS.items():
-            act  = n == step
-            bg2  = "#eff6ff" if act else "#f9fafb"
-            bl   = "3px solid #2563eb" if act else "3px solid #e5e7eb"
-            tc   = "#1e40af" if act else "#374151"
-            dc   = "#3b82f6" if act else "#6b7280"
-            steps_rows += (f'<div style="border-left:{bl};padding:10px 14px;'
-                           f'border-radius:0 8px 8px 0;background:{bg2};margin-bottom:6px;">'
-                           f'<div style="font-size:13px;font-weight:700;color:{tc};">'
-                           f'Step {n} — {title}</div>'
-                           f'<div style="font-size:13px;color:{dc};margin-top:3px;">{desc}</div>'
-                           f'</div>')
-
+            act = n == step
+            bg2 = "#eff6ff" if act else "#f9fafb"
+            bl  = "3px solid #2563eb" if act else "3px solid #e5e7eb"
+            tc  = "#1e40af" if act else "#374151"
+            dc  = "#3b82f6" if act else "#6b7280"
+            steps_rows += (
+                f'<div style="border-left:{bl};padding:10px 14px;border-radius:0 8px 8px 0;'
+                f'background:{bg2};margin-bottom:6px;">'
+                f'<div style="font-size:13px;font-weight:700;color:{tc};">Step {n} — {title}</div>'
+                f'<div style="font-size:13px;color:{dc};margin-top:3px;">{desc}</div>'
+                f'</div>'
+            )
         render(f"""
         <div style="{CARD}">
           {overline("What to do in each step")}
@@ -441,79 +435,100 @@ with center:
         """)
 
     # ── Step 2: Open Hypotheses ──
+    # 버튼: "View H1" (선택) + Active/Narrow/Drop (상태) — 왼쪽 패널과 동일
     elif step == 2:
         render(f"""
         <div style="{CARD}">
           {overline("Instructions")}
-          {heading("Review all possible explanations — do not narrow yet")}
-          {body("At this stage, every hypothesis should remain visible. "
-                "Inspect each one before deciding to narrow or drop it.")}
+          {heading("Review each explanation — do not narrow yet")}
+          {body("At this stage, keep all hypotheses open. "
+                "Use <strong>View</strong> to read each one in detail. "
+                "Use <strong>Active / Narrow / Drop</strong> only after reviewing.")}
         </div>
         """)
 
         for h in rca.hypotheses:
+            is_focused = h.id == st.session_state.selected
             render(f"""
             <div style="{CARD}margin-bottom:8px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;
-                  margin-bottom:8px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
                 <span style="font-size:13px;font-weight:700;color:#9ca3af;">{h.id}</span>
                 {badge(h.status)}
               </div>
-              <div style="font-size:16px;font-weight:600;color:#111827;
-                  line-height:1.45;margin-bottom:8px;">{h.description}</div>
+              <div style="font-size:16px;font-weight:600;color:#111827;line-height:1.45;margin-bottom:8px;">
+                {h.description}
+              </div>
               <div style="font-size:14px;color:#6b7280;">
-                Inspect this path and confirm it's visible before moving to narrowing.
+                Review this explanation and check its factors before making a decision.
               </div>
             </div>
             """)
 
-            is_focused = h.id == st.session_state.selected
-            is_active  = h.status == "active"
-            c1, c2 = st.columns(2)
+            c1, c2, c3, c4 = st.columns(4)
             with c1:
-                if st.button(f"Inspect {h.id}", key=f"insp_{h.id}", use_container_width=True):
+                if st.button(
+                    f"✓ Viewing" if is_focused else f"View {h.id}",
+                    key=f"v2_{h.id}",
+                    use_container_width=True,
+                    type="primary" if is_focused else "secondary"
+                ):
                     st.session_state.selected = h.id
-                    log_event(f"Inspecting {h.id}")
-                    st.session_state.toast_msg = f"🔍 Inspecting {h.id} — check the right panel"
+                    log_event(f"Viewing {h.id}")
+                    st.session_state.toast_msg = f"🔍 Now viewing {h.id}"
                     st.rerun()
-                if is_focused:
-                    render(f'<style>div[data-testid="stButton"]:has(button[key="insp_{h.id}"]) button'
-                           f'{{background:#eff6ff !important;border-color:#2563eb !important;'
-                           f'color:#1d4ed8 !important;}}</style>')
             with c2:
-                if st.button("Mark Visible", key=f"vis_{h.id}", use_container_width=True):
+                if st.button(
+                    "✅ Active" if h.status == "active" else "Active",
+                    key=f"a2_{h.id}",
+                    use_container_width=True,
+                    type="primary" if h.status == "active" else "secondary"
+                ):
                     set_status(h.id, "active")
                     st.session_state.selected = h.id
-                    st.session_state.toast_msg = f"👁 {h.id} marked as visible"
+                    st.session_state.toast_msg = f"✅ {h.id} → Active"
                     st.rerun()
-                if is_active:
-                    render(f'<style>div[data-testid="stButton"]:has(button[key="vis_{h.id}"]) button'
-                           f'{{background:#f0fdf4 !important;border-color:#16a34a !important;'
-                           f'color:#16a34a !important;}}</style>')
+            with c3:
+                if st.button(
+                    "⚠️ Narrowed" if h.status == "narrowed" else "Narrow",
+                    key=f"n2_{h.id}",
+                    use_container_width=True,
+                    type="primary" if h.status == "narrowed" else "secondary"
+                ):
+                    set_status(h.id, "narrowed")
+                    st.session_state.selected = h.id
+                    st.session_state.toast_msg = f"⚠️ {h.id} → Narrowed"
+                    st.rerun()
+            with c4:
+                if st.button(
+                    "❌ Dropped" if h.status == "discarded" else "Drop",
+                    key=f"d2_{h.id}",
+                    use_container_width=True,
+                    type="primary" if h.status == "discarded" else "secondary"
+                ):
+                    set_status(h.id, "discarded")
+                    st.session_state.selected = h.id
+                    st.session_state.toast_msg = f"❌ {h.id} → Dropped"
+                    st.rerun()
 
             render('<div style="height:4px;"></div>')
 
     # ── Step 3: Attach Reasoning ──
     elif step == 3:
-        factors_rows = "".join(
-            pill(f, bg="#f9fafb", bdr="#e5e7eb", color="#374151")
-            for f in selected.factors
-        )
+        factors_rows = "".join(pill(f) for f in selected.factors)
         evidence_rows = "".join(
             pill(e, bg="#f0fdf4", bdr="#86efac", color="#166534")
             for e in selected.evidence
         )
-
         render(f"""
         <div style="{CARD}">
-          {overline("Attach Reasoning")}
-          <div style="display:flex;align-items:center;justify-content:space-between;
-              margin-bottom:8px;">
+          {overline("Selected Hypothesis")}
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <span style="font-size:13px;font-weight:700;color:#9ca3af;">{selected.id}</span>
             {badge(selected.status)}
           </div>
           {heading(selected.description)}
-          {body("Inspect contributing factors, evidence, and ambiguity before narrowing this path.")}
+          {body("Review the contributing factors and evidence below. "
+                "Then rate the plausibility and add your notes.")}
           {slabel("Contributing Factors")}
           {factors_rows}
           {slabel("Evidence")}
@@ -521,7 +536,6 @@ with center:
         </div>
         """)
 
-        # Widgets outside HTML card
         plaus_val = st.radio(
             "How plausible is this explanation?",
             ["Plausible", "Unclear", "Weak"],
@@ -554,27 +568,24 @@ with center:
             status_rows += (
                 f'<div style="display:flex;align-items:center;justify-content:space-between;'
                 f'padding:12px 14px;background:{bg2};border-radius:8px;margin-bottom:6px;">'
-                f'<div><span style="font-size:13px;font-weight:700;color:#9ca3af;'
-                f'margin-right:10px;">{h.id}</span>'
+                f'<div><span style="font-size:13px;font-weight:700;color:#9ca3af;margin-right:10px;">{h.id}</span>'
                 f'<span style="font-size:14px;color:#374151;">{h.description}</span></div>'
                 f'{badge(h.status)}</div>'
             )
 
         render(f"""
         <div style="{CARD}">
-          {overline("Narrowing Controls")}
-          <div style="display:flex;align-items:center;justify-content:space-between;
-              margin-bottom:8px;">
+          {overline("Selected Hypothesis")}
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <span style="font-size:13px;font-weight:700;color:#9ca3af;">{selected.id}</span>
             {badge(selected.status)}
           </div>
           {heading(selected.description)}
-          {body("Only narrow after inspecting. Each path you drop makes the investigation "
+          {body("Only narrow after reviewing. Each path you drop makes the investigation "
                 "look neater — but that is not the same as making it stronger.")}
         </div>
         """)
 
-        # Status buttons — type=primary highlights current state
         n1, n2, n3 = st.columns(3)
         with n1:
             if st.button(
@@ -608,7 +619,7 @@ with center:
 
         render(f"""
         <div style="{CARD}">
-          {overline("Current Status of All Hypotheses")}
+          {overline("Status of All Hypotheses")}
           {status_rows}
         </div>
         """)
@@ -680,7 +691,7 @@ with center:
             st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
 # ─────────────────────────────────────────────────────────
-# RIGHT — Inspector (pure HTML)
+# RIGHT — Inspector
 # ─────────────────────────────────────────────────────────
 with right:
     render(f"""
@@ -715,7 +726,7 @@ with right:
 
     render(f"""
     <div style="{CARD}">
-      {overline("Focused Hypothesis")}
+      {overline("Currently Viewing")}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <span style="font-size:13px;font-weight:700;color:#9ca3af;">{selected.id}</span>
         {badge(selected.status)}
@@ -736,11 +747,12 @@ with right:
 
     render(f"""
     <div style="{CARD}">
-      {overline("About")}
+      {overline("About This Tool")}
       <div style="font-size:14px;color:#6b7280;line-height:1.65;">
         This tool does not find the correct root cause for you.
         It makes <strong>reasoning compression visible</strong> before
-        the investigation locks in.
+        the investigation locks in — so you can ask: is this explanation
+        strong, or just neat?
       </div>
     </div>
     """)
@@ -766,8 +778,8 @@ with bot_l:
     """)
 
 with bot_r:
-    render(f'<div style="font-size:11px;font-weight:700;text-transform:uppercase;'
-           f'letter-spacing:.08em;color:#9ca3af;margin-bottom:8px;">Navigation</div>')
+    render('<div style="font-size:11px;font-weight:700;text-transform:uppercase;'
+           'letter-spacing:.08em;color:#9ca3af;margin-bottom:8px;">Navigation</div>')
     nav1, nav2 = st.columns(2)
     with nav1:
         if st.button("← Back", use_container_width=True, key="nav_back"):
