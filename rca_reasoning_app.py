@@ -3,6 +3,11 @@ RCA Reasoning Scaffolder
 GMP worker-friendly. Clear button labels. No empty boxes. Toast feedback.
 Run: streamlit run rca_app.py
 Requires: rca_reasoning_core.py in same directory
+
+Fixes applied:
+- page_icon added (🔍)
+- nav_back: st.rerun() moved inside if block — no unnecessary rerun at step 1
+- nav_next: same pattern applied for consistency
 """
 
 import streamlit as st
@@ -11,6 +16,7 @@ from rca_reasoning_core import build_example_case
 
 st.set_page_config(
     page_title="RCA Reasoning Scaffolder",
+    page_icon="🔍",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -131,7 +137,7 @@ def render(html):
     st.markdown(html, unsafe_allow_html=True)
 
 # =========================================================
-# Toast — render after rerun
+# Toast
 # =========================================================
 if st.session_state.toast_msg:
     st.toast(st.session_state.toast_msg)
@@ -157,7 +163,6 @@ html, body, [data-testid="stAppViewContainer"], .stApp {
 }
 [data-testid="stVerticalBlock"] > div:empty { display:none !important; }
 
-/* Kill ALL Streamlit container chrome */
 div[data-testid="stVerticalBlockBorderWrapper"],
 div[data-testid="stVerticalBlockBorderWrapper"] > div {
     border:none !important;
@@ -168,7 +173,6 @@ div[data-testid="stVerticalBlockBorderWrapper"] > div {
     margin:0 !important;
 }
 
-/* Buttons - base */
 div[data-testid="stButton"] > button {
     font-family:'Inter',sans-serif !important;
     font-size:14px !important;
@@ -189,7 +193,6 @@ div[data-testid="stButton"] > button:hover {
     color:#111827 !important;
 }
 
-/* Radio */
 [data-testid="stRadio"] { padding:8px 0 4px !important; }
 [data-testid="stRadio"] label {
     font-size:15px !important;
@@ -198,7 +201,6 @@ div[data-testid="stButton"] > button:hover {
     padding:5px 10px !important;
 }
 
-/* Textarea */
 .stTextArea { padding:4px 0 !important; }
 .stTextArea label {
     font-size:15px !important;
@@ -344,7 +346,6 @@ with left:
         </div>
         """)
 
-        # 선택 버튼
         if st.button(
             f"✓ Viewing {h.id}" if is_sel else f"View {h.id}",
             key=f"sel_{h.id}",
@@ -356,13 +357,11 @@ with left:
             st.session_state.toast_msg = f"🔍 Now viewing {h.id}"
             st.rerun()
 
-        # 상태 변경 버튼 3개
         b1, b2, b3 = st.columns(3)
         with b1:
             if st.button(
                 "✅ Active" if h.status == "active" else "Active",
-                key=f"ba_{h.id}",
-                use_container_width=True,
+                key=f"ba_{h.id}", use_container_width=True,
                 type="primary" if h.status == "active" else "secondary"
             ):
                 set_status(h.id, "active")
@@ -372,8 +371,7 @@ with left:
         with b2:
             if st.button(
                 "⚠️ Narrowed" if h.status == "narrowed" else "Narrow",
-                key=f"bn_{h.id}",
-                use_container_width=True,
+                key=f"bn_{h.id}", use_container_width=True,
                 type="primary" if h.status == "narrowed" else "secondary"
             ):
                 set_status(h.id, "narrowed")
@@ -383,8 +381,7 @@ with left:
         with b3:
             if st.button(
                 "❌ Dropped" if h.status == "discarded" else "Drop",
-                key=f"bd_{h.id}",
-                use_container_width=True,
+                key=f"bd_{h.id}", use_container_width=True,
                 type="primary" if h.status == "discarded" else "secondary"
             ):
                 set_status(h.id, "discarded")
@@ -399,7 +396,6 @@ with left:
 # ─────────────────────────────────────────────────────────
 with center:
 
-    # ── Step 1: Intake ──
     if step == 1:
         render(f"""
         <div style="{CARD}">
@@ -434,8 +430,6 @@ with center:
         </div>
         """)
 
-    # ── Step 2: Open Hypotheses ──
-    # 버튼: "View H1" (선택) + Active/Narrow/Drop (상태) — 왼쪽 패널과 동일
     elif step == 2:
         render(f"""
         <div style="{CARD}">
@@ -468,8 +462,7 @@ with center:
             with c1:
                 if st.button(
                     f"✓ Viewing" if is_focused else f"View {h.id}",
-                    key=f"v2_{h.id}",
-                    use_container_width=True,
+                    key=f"v2_{h.id}", use_container_width=True,
                     type="primary" if is_focused else "secondary"
                 ):
                     st.session_state.selected = h.id
@@ -479,8 +472,7 @@ with center:
             with c2:
                 if st.button(
                     "✅ Active" if h.status == "active" else "Active",
-                    key=f"a2_{h.id}",
-                    use_container_width=True,
+                    key=f"a2_{h.id}", use_container_width=True,
                     type="primary" if h.status == "active" else "secondary"
                 ):
                     set_status(h.id, "active")
@@ -490,8 +482,7 @@ with center:
             with c3:
                 if st.button(
                     "⚠️ Narrowed" if h.status == "narrowed" else "Narrow",
-                    key=f"n2_{h.id}",
-                    use_container_width=True,
+                    key=f"n2_{h.id}", use_container_width=True,
                     type="primary" if h.status == "narrowed" else "secondary"
                 ):
                     set_status(h.id, "narrowed")
@@ -501,8 +492,7 @@ with center:
             with c4:
                 if st.button(
                     "❌ Dropped" if h.status == "discarded" else "Drop",
-                    key=f"d2_{h.id}",
-                    use_container_width=True,
+                    key=f"d2_{h.id}", use_container_width=True,
                     type="primary" if h.status == "discarded" else "secondary"
                 ):
                     set_status(h.id, "discarded")
@@ -512,7 +502,6 @@ with center:
 
             render('<div style="height:4px;"></div>')
 
-    # ── Step 3: Attach Reasoning ──
     elif step == 3:
         factors_rows = "".join(pill(f) for f in selected.factors)
         evidence_rows = "".join(
@@ -560,7 +549,6 @@ with center:
             st.session_state.toast_msg = f"💾 Note saved for {selected.id}"
             st.rerun()
 
-    # ── Step 4: Narrowing ──
     elif step == 4:
         status_rows = ""
         for h in rca.hypotheses:
@@ -624,7 +612,6 @@ with center:
         </div>
         """)
 
-    # ── Step 5: Pre-Closure ──
     elif step == 5:
         active_hs   = [h for h in rca.hypotheses if h.status == "active"]
         narrowed_hs = [h for h in rca.hypotheses if h.status == "narrowed"]
@@ -782,16 +769,18 @@ with bot_r:
            'letter-spacing:.08em;color:#9ca3af;margin-bottom:8px;">Navigation</div>')
     nav1, nav2 = st.columns(2)
     with nav1:
+        # FIX: rerun only when step actually changes
         if st.button("← Back", use_container_width=True, key="nav_back"):
             if st.session_state.step > 1:
                 st.session_state.step -= 1
                 log_event(f"Step {st.session_state.step}: {STEPS[st.session_state.step][0]}")
                 st.session_state.toast_msg = f"← Step {st.session_state.step}: {STEPS[st.session_state.step][0]}"
-            st.rerun()
+                st.rerun()
     with nav2:
+        # FIX: rerun only when step actually changes
         if st.button("Next →", use_container_width=True, key="nav_next"):
             if st.session_state.step < 5:
                 st.session_state.step += 1
                 log_event(f"Step {st.session_state.step}: {STEPS[st.session_state.step][0]}")
                 st.session_state.toast_msg = f"→ Step {st.session_state.step}: {STEPS[st.session_state.step][0]}"
-            st.rerun()
+                st.rerun()
