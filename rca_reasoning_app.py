@@ -3,11 +3,6 @@ RCA Reasoning Scaffolder
 GMP worker-friendly. Clear button labels. No empty boxes. Toast feedback.
 Run: streamlit run rca_app.py
 Requires: rca_reasoning_core.py in same directory
-
-Fixes applied:
-- page_icon added (🔍)
-- nav_back: st.rerun() moved inside if block — no unnecessary rerun at step 1
-- nav_next: same pattern applied for consistency
 """
 
 import streamlit as st
@@ -21,9 +16,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# =========================================================
-# Session state
-# =========================================================
 if "rca" not in st.session_state:
     st.session_state.rca = build_example_case()
 if "step" not in st.session_state:
@@ -49,9 +41,6 @@ STEPS = {
     5: ("Pre-Closure",      "Review what remained visible and what was compressed before you close."),
 }
 
-# =========================================================
-# Helpers
-# =========================================================
 def log_event(msg):
     st.session_state.log.insert(0, msg)
 
@@ -88,7 +77,6 @@ def closure_info():
     else:
         return "Collapsed", "#6b7280", "#f9fafb", "#d1d5db", "No active paths.", pct
 
-# ── HTML primitives ───────────────────────────────────────
 CARD = ('background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;'
         'padding:22px 24px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);')
 
@@ -136,115 +124,72 @@ def pill(t, bg="#f9fafb", bdr="#e5e7eb", color="#374151"):
 def render(html):
     st.markdown(html, unsafe_allow_html=True)
 
-# =========================================================
-# Toast
-# =========================================================
 if st.session_state.toast_msg:
     st.toast(st.session_state.toast_msg)
     st.session_state.toast_msg = None
 
-# =========================================================
-# CSS
-# =========================================================
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 html, body, [data-testid="stAppViewContainer"], .stApp {
     background: #eef0f4 !important;
     font-family: 'Inter', sans-serif !important;
 }
 [data-testid="stHeader"],[data-testid="stDecoration"],
 [data-testid="stToolbar"],footer { display:none !important; }
-
 .block-container {
     max-width:1480px !important;
     padding:20px 28px 32px !important;
 }
 [data-testid="stVerticalBlock"] > div:empty { display:none !important; }
-
 div[data-testid="stVerticalBlockBorderWrapper"],
 div[data-testid="stVerticalBlockBorderWrapper"] > div {
-    border:none !important;
-    background:transparent !important;
-    box-shadow:none !important;
-    padding:0 !important;
-    border-radius:0 !important;
-    margin:0 !important;
+    border:none !important; background:transparent !important;
+    box-shadow:none !important; padding:0 !important;
+    border-radius:0 !important; margin:0 !important;
 }
-
 div[data-testid="stButton"] > button {
     font-family:'Inter',sans-serif !important;
-    font-size:14px !important;
-    font-weight:600 !important;
-    color:#374151 !important;
-    background:#ffffff !important;
-    border:1.5px solid #d1d5db !important;
-    border-radius:9px !important;
-    padding:10px 16px !important;
-    min-height:2.7rem !important;
+    font-size:14px !important; font-weight:600 !important;
+    color:#374151 !important; background:#ffffff !important;
+    border:1.5px solid #d1d5db !important; border-radius:9px !important;
+    padding:10px 8px !important; min-height:2.7rem !important;
     box-shadow:0 1px 2px rgba(0,0,0,.05) !important;
-    transition:all .12s ease !important;
-    width:100% !important;
+    transition:all .12s ease !important; width:100% !important;
+    white-space:nowrap !important; overflow:hidden !important;
+    text-overflow:ellipsis !important;
 }
 div[data-testid="stButton"] > button:hover {
-    background:#f3f4f6 !important;
-    border-color:#9ca3af !important;
-    color:#111827 !important;
+    background:#f3f4f6 !important; border-color:#9ca3af !important; color:#111827 !important;
 }
-
 [data-testid="stRadio"] { padding:8px 0 4px !important; }
 [data-testid="stRadio"] label {
-    font-size:15px !important;
-    font-weight:500 !important;
-    color:#374151 !important;
-    padding:5px 10px !important;
+    font-size:15px !important; font-weight:500 !important; color:#374151 !important; padding:5px 10px !important;
 }
-
 .stTextArea { padding:4px 0 !important; }
-.stTextArea label {
-    font-size:15px !important;
-    font-weight:600 !important;
-    color:#374151 !important;
-}
+.stTextArea label { font-size:15px !important; font-weight:600 !important; color:#374151 !important; }
 textarea {
-    font-family:'Inter',sans-serif !important;
-    font-size:14px !important;
-    color:#1f2937 !important;
-    background:#f9fafb !important;
-    border:1.5px solid #d1d5db !important;
-    border-radius:9px !important;
-    padding:14px 16px !important;
-    min-height:120px !important;
-    line-height:1.7 !important;
+    font-family:'Inter',sans-serif !important; font-size:14px !important;
+    color:#1f2937 !important; background:#f9fafb !important;
+    border:1.5px solid #d1d5db !important; border-radius:9px !important;
+    padding:14px 16px !important; min-height:120px !important; line-height:1.7 !important;
 }
 textarea:focus { border-color:#2563eb !important; outline:none !important; }
-
 [data-testid="stDataFrame"] { border-radius:9px !important; overflow:hidden; }
 [data-testid="stExpander"] {
-    border:1px solid #e5e7eb !important;
-    border-radius:10px !important;
-    background:#f9fafb !important;
+    border:1px solid #e5e7eb !important; border-radius:10px !important; background:#f9fafb !important;
 }
-[data-testid="stExpander"] summary {
-    font-size:15px !important; font-weight:600 !important; color:#374151 !important;
-}
-p, li { font-size:15px !important; color:#4b5563 !important; line-height:1.7 !important; }
+[data-testid="stExpander"] summary { font-size:15px !important; font-weight:600 !important; color:#374151 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# =========================================================
-# Derived state
-# =========================================================
 step = st.session_state.step
 step_name, step_desc = STEPS[step]
 sig_name, sig_color, sig_bg, sig_bdr, sig_msg, pressure_pct = closure_info()
 active_c, narrowed_c, dropped_c = counts()
 selected = get_selected()
 
-# =========================================================
 # Header
-# =========================================================
 render(f"""
 <div style="{CARD}margin-bottom:10px;">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
@@ -279,9 +224,7 @@ render(f"""
 </div>
 """)
 
-# =========================================================
 # Step nav
-# =========================================================
 render('<div style="font-size:11px;font-weight:700;text-transform:uppercase;'
        'letter-spacing:.08em;color:#9ca3af;margin-bottom:8px;">Investigation Workflow</div>')
 
@@ -310,14 +253,9 @@ render(f"""
 </div>
 """)
 
-# =========================================================
-# Main columns
-# =========================================================
 left, center, right = st.columns([1.1, 1.75, 1.1], gap="large")
 
-# ─────────────────────────────────────────────────────────
-# LEFT — Hypothesis list
-# ─────────────────────────────────────────────────────────
+# LEFT
 with left:
     render('<div style="font-size:13px;font-weight:700;text-transform:uppercase;'
            'letter-spacing:.07em;color:#6b7280;margin-bottom:12px;">Hypotheses</div>')
@@ -348,8 +286,7 @@ with left:
 
         if st.button(
             f"✓ Viewing {h.id}" if is_sel else f"View {h.id}",
-            key=f"sel_{h.id}",
-            use_container_width=True,
+            key=f"sel_{h.id}", use_container_width=True,
             type="primary" if is_sel else "secondary"
         ):
             st.session_state.selected = h.id
@@ -357,10 +294,11 @@ with left:
             st.session_state.toast_msg = f"🔍 Now viewing {h.id}"
             st.rerun()
 
+        # 이모지만 — 잘림 문제 해결
         b1, b2, b3 = st.columns(3)
         with b1:
             if st.button(
-                "✅ Active" if h.status == "active" else "Active",
+                "✅" if h.status == "active" else "Active",
                 key=f"ba_{h.id}", use_container_width=True,
                 type="primary" if h.status == "active" else "secondary"
             ):
@@ -370,7 +308,7 @@ with left:
                 st.rerun()
         with b2:
             if st.button(
-                "⚠️ Narrowed" if h.status == "narrowed" else "Narrow",
+                "⚠️" if h.status == "narrowed" else "Narrow",
                 key=f"bn_{h.id}", use_container_width=True,
                 type="primary" if h.status == "narrowed" else "secondary"
             ):
@@ -380,7 +318,7 @@ with left:
                 st.rerun()
         with b3:
             if st.button(
-                "❌ Dropped" if h.status == "discarded" else "Drop",
+                "❌" if h.status == "discarded" else "Drop",
                 key=f"bd_{h.id}", use_container_width=True,
                 type="primary" if h.status == "discarded" else "secondary"
             ):
@@ -391,11 +329,8 @@ with left:
 
         render('<div style="height:8px;"></div>')
 
-# ─────────────────────────────────────────────────────────
-# CENTER — Step content
-# ─────────────────────────────────────────────────────────
+# CENTER
 with center:
-
     if step == 1:
         render(f"""
         <div style="{CARD}">
@@ -471,7 +406,7 @@ with center:
                     st.rerun()
             with c2:
                 if st.button(
-                    "✅ Active" if h.status == "active" else "Active",
+                    "✅" if h.status == "active" else "Active",
                     key=f"a2_{h.id}", use_container_width=True,
                     type="primary" if h.status == "active" else "secondary"
                 ):
@@ -481,7 +416,7 @@ with center:
                     st.rerun()
             with c3:
                 if st.button(
-                    "⚠️ Narrowed" if h.status == "narrowed" else "Narrow",
+                    "⚠️" if h.status == "narrowed" else "Narrow",
                     key=f"n2_{h.id}", use_container_width=True,
                     type="primary" if h.status == "narrowed" else "secondary"
                 ):
@@ -491,7 +426,7 @@ with center:
                     st.rerun()
             with c4:
                 if st.button(
-                    "❌ Dropped" if h.status == "discarded" else "Drop",
+                    "❌" if h.status == "discarded" else "Drop",
                     key=f"d2_{h.id}", use_container_width=True,
                     type="primary" if h.status == "discarded" else "secondary"
                 ):
@@ -604,7 +539,6 @@ with center:
                 st.rerun()
 
         render('<div style="height:8px;"></div>')
-
         render(f"""
         <div style="{CARD}">
           {overline("Status of All Hypotheses")}
@@ -677,9 +611,7 @@ with center:
                 })
             st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
-# ─────────────────────────────────────────────────────────
-# RIGHT — Inspector
-# ─────────────────────────────────────────────────────────
+# RIGHT
 with right:
     render(f"""
     <div style="{CARD}">
@@ -687,23 +619,19 @@ with right:
       <div style="font-size:28px;font-weight:800;color:{sig_color};margin-bottom:6px;">{sig_name}</div>
       <div style="font-size:14px;color:#4b5563;margin-bottom:16px;line-height:1.6;">{sig_msg}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div style="text-align:center;padding:10px 8px;background:#f0fdf4;
-            border:1px solid #86efac;border-radius:9px;">
+        <div style="text-align:center;padding:10px 8px;background:#f0fdf4;border:1px solid #86efac;border-radius:9px;">
           <div style="font-size:22px;font-weight:700;color:#16a34a;">{active_c}</div>
           <div style="font-size:12px;font-weight:600;color:#16a34a;">Active</div>
         </div>
-        <div style="text-align:center;padding:10px 8px;background:#fefce8;
-            border:1px solid #fde68a;border-radius:9px;">
+        <div style="text-align:center;padding:10px 8px;background:#fefce8;border:1px solid #fde68a;border-radius:9px;">
           <div style="font-size:22px;font-weight:700;color:#d97706;">{narrowed_c}</div>
           <div style="font-size:12px;font-weight:600;color:#d97706;">Narrowed</div>
         </div>
-        <div style="text-align:center;padding:10px 8px;background:#f9fafb;
-            border:1px solid #d1d5db;border-radius:9px;">
+        <div style="text-align:center;padding:10px 8px;background:#f9fafb;border:1px solid #d1d5db;border-radius:9px;">
           <div style="font-size:22px;font-weight:700;color:#6b7280;">{dropped_c}</div>
           <div style="font-size:12px;font-weight:600;color:#6b7280;">Dropped</div>
         </div>
-        <div style="text-align:center;padding:10px 8px;background:{sig_bg};
-            border:1px solid {sig_bdr};border-radius:9px;">
+        <div style="text-align:center;padding:10px 8px;background:{sig_bg};border:1px solid {sig_bdr};border-radius:9px;">
           <div style="font-size:22px;font-weight:700;color:{sig_color};">{pressure_pct}%</div>
           <div style="font-size:12px;font-weight:600;color:{sig_color};">Pressure</div>
         </div>
@@ -744,9 +672,7 @@ with right:
     </div>
     """)
 
-# =========================================================
-# Bottom — log + nav
-# =========================================================
+# Bottom
 render('<div style="height:10px;"></div>')
 bot_l, bot_r = st.columns([2.5, 1], gap="large")
 
@@ -769,7 +695,6 @@ with bot_r:
            'letter-spacing:.08em;color:#9ca3af;margin-bottom:8px;">Navigation</div>')
     nav1, nav2 = st.columns(2)
     with nav1:
-        # FIX: rerun only when step actually changes
         if st.button("← Back", use_container_width=True, key="nav_back"):
             if st.session_state.step > 1:
                 st.session_state.step -= 1
@@ -777,7 +702,6 @@ with bot_r:
                 st.session_state.toast_msg = f"← Step {st.session_state.step}: {STEPS[st.session_state.step][0]}"
                 st.rerun()
     with nav2:
-        # FIX: rerun only when step actually changes
         if st.button("Next →", use_container_width=True, key="nav_next"):
             if st.session_state.step < 5:
                 st.session_state.step += 1
