@@ -30,8 +30,9 @@ st.set_page_config(
 # =========================================================
 INDIVIDUAL_BLAME_TERMS = [
     "operator error", "human error", "analyst error",
-    "did not follow", "failed to follow", "careless",
-    "negligence", "mistake by operator", "employee mistake",
+    "did not follow", "failed to follow", "was not followed",
+    "not followed correctly", "not followed properly",
+    "careless", "negligence", "mistake by operator", "employee mistake",
     "technician mistake", "user error", "personnel error",
 ]
 PROCEDURAL_TERMS = ["procedure", "sop", "instruction", "sequence", "step",
